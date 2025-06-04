@@ -54,6 +54,7 @@ class ModmailCog(commands.Cog):
     @commands.command()
     @commands.has_permissions(manage_channels=True)
     async def closeticket(self, ctx: commands.Context):
+        """Closes the current modmail ticket and logs the conversation."""
         if not ctx.channel.name.startswith("ticket-"):
             await ctx.send("This command can only be used in a modmail ticket channel.")
             return

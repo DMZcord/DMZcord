@@ -1,16 +1,24 @@
 ## Hi there 👋
+WIP Custom Discord bot for discord.gg/CHUynnZdae
 
-<!--
-**DMZcord/DMZcord** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-
-Here are some ideas to get you started:
-
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+--- Current Features ---
+CheaterCog:
+  !CheckCheater - lookup tool to see if someone is a known cheater
+  !ListCheaters - lists all known cheaters
+  !LogCheater - adds new cheater to the list
+ClassSetupCog:
+  !ClassSetup - placeholder
+ModerationCog:
+  !Warn - warns user
+  !Mute - mutes user
+  !Ban - bans user
+  !Unmute - unmutes user
+  !Unban - unbans user
+  !Remove - removes specified warning
+ModmailCog:
+  !CloseTicket - closes modmail ticket
+ReactionRolesCog:
+  !AddCategory - adds a reaction role category
+  !AddReactionRole - adds a reaction role to an existing message
+WelcomeCog:
+  !WelcomeRoles - adds roles given upon joining a server

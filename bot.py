@@ -198,44 +198,42 @@ class MyBot(commands.Bot):
             lines.append(f"**!{command.name}**: {doc}\nRequirements: {perms_str}")
         await ctx.send("\n\n".join(lines))
 
-class ModerationCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    async def warn(self, ctx: commands.Context, member: discord.Member, *, reason: str = "No reason provided"):
+        """!warn <member> [reason]"""
+        if member == ctx.author:
+            await ctx.send("You cannot warn yourself.")
+            return
+        if member.guild_permissions.administrator:
+            await ctx.send("You cannot warn a user with administrator permissions.")
+            return
+        # ...existing code...
 
-    async def cog_check(self, ctx):
-        return ctx.author.guild_permissions.administrator
+    @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    async def mute(self, ctx: commands.Context, member: discord.Member, duration: str, *, reason: str = "No reason provided"):
+        """!mute <member> <duration> [reason]"""
+        if member == ctx.author:
+            await ctx.send("You cannot mute yourself.")
+            return
+        if member.guild_permissions.administrator:
+            await ctx.send("You cannot mute a user with administrator permissions.")
+            return
+        # ...existing code...
 
-class ModmailCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        if not GUILD_ID or not MODMAIL_LOG_CHANNEL_ID:
-            raise ValueError("GUILD_ID or MODMAIL_LOG_CHANNEL_ID missing in .env")
-        self.guild_id = int(GUILD_ID)
-        self.modmail_log_channel_id = int(MODMAIL_LOG_CHANNEL_ID)
-
-    async def cog_check(self, ctx):
-        return ctx.author.guild_permissions.administrator
-
-class ReactionRolesCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
-    async def cog_check(self, ctx):
-        return ctx.author.guild_permissions.administrator
-
-class SetupCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
-    async def cog_check(self, ctx):
-        return ctx.author.guild_permissions.administrator
-
-class WelcomeCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
-    async def cog_check(self, ctx):
-        return ctx.author.guild_permissions.administrator
+    @commands.command()
+    @commands.has_permissions(ban_members=True)
+    async def ban(self, ctx: commands.Context, member: discord.Member, *, reason: str = "No reason provided"):
+        """!ban <member> [reason]"""
+        if member == ctx.author:
+            await ctx.send("You cannot ban yourself.")
+            return
+        if member.guild_permissions.administrator:
+            await ctx.send("You cannot ban a user with administrator permissions.")
+            return
+        # ...existing code...
+# ...existing code...
 
 # Initialize bot as MyBot
 bot = MyBot(command_prefix='!', intents=intents)

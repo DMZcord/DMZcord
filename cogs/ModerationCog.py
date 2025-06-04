@@ -4,6 +4,7 @@ import sqlite3
 from datetime import datetime, timedelta
 import re
 import os
+import io
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -553,5 +554,56 @@ class ModerationCog(commands.Cog):
                     pass  # Can't DM user, proceed silently
         conn.close()
 
+    @commands.command(name='clear')
+    @commands.has_permissions(manage_messages=True)
+    async def clear(self, ctx, arg: str):
+        log_entries = []
+
+        async def log_message(msg):
+            timestamp = msg.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            log_entries.append(f"[{timestamp}] {msg.author} ({msg.author.id}): {msg.content}")
+
+        try:
+            if arg.isdigit():
+                number = int(arg)
+
+                if 1 <= number <= 100:
+                    deleted = await ctx.channel.purge(limit=number + 1, before=ctx.message)
+                    for msg in deleted:
+                        await log_message(msg)
+
+                    await ctx.send(f"✅ Deleted {len(deleted) - 1} messages.", delete_after=5)
+
+                else:
+                    target_message = await ctx.channel.fetch_message(number)
+                    deleted = await ctx.channel.purge(limit=None, check=lambda m: m.created_at > target_message.created_at)
+
+                    for msg in deleted:
+                        await log_message(msg)
+
+                    await ctx.send(f"✅ Deleted {len(deleted)} messages after the specified message.", delete_after=5)
+
+                # --- Send log to logging channel ---
+                log_channel = self.bot.get_channel(1377733230857551956)
+                if log_entries and log_channel:
+                    output = io.StringIO()
+                    output.write(f"Command run by {ctx.author} ({ctx.author.id}) at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
+                    output.write(f"In channel: #{ctx.channel} (ID: {ctx.channel.id})\n\n")
+                    output.write("\n".join(reversed(log_entries)))  # chronological order
+                    output.seek(0)
+
+                    file = discord.File(fp=output, filename="deleted_messages_log.txt")
+                    await log_channel.send(file=file)
+
+            else:
+                await ctx.send("❌ Please enter a valid number of messages or message ID.", delete_after=5)
+
+        except discord.NotFound:
+            await ctx.send("❌ Message ID not found in this channel.", delete_after=5)
+        except discord.Forbidden:
+            await ctx.send("❌ I do not have permission to delete messages.", delete_after=5)
+        except discord.HTTPException as e:
+            await ctx.send(f"❌ Failed to delete messages: {e}", delete_after=5)
+                
 async def setup(bot: commands.Bot):
     await bot.add_cog(ModerationCog(bot))

@@ -7,6 +7,7 @@ class ClassSetupCog(commands.Cog):
 
     @commands.command()
     async def classsetup(self, ctx, class_name: str):
+        """WORK IN PROGRESS"""
         classes = {
             "tank": "Tank: High HP, melee focus. Role: Defender.",
             "healer": "Healer: Restores team HP. Role: Support.",

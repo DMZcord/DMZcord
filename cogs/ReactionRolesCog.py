@@ -9,6 +9,7 @@ class ReactionRolesCog(commands.Cog):
     @commands.command()
     @commands.has_permissions(manage_roles=True)
     async def addcategory(self, ctx, category_name: str, *roles: discord.Role):
+        """!addcategory <Category Name> <@Role1> <@Role2> ..."""
         if not roles:
             await ctx.send("Please mention at least one role for the category.")
             return
@@ -24,6 +25,7 @@ class ReactionRolesCog(commands.Cog):
     @commands.command()
     @commands.has_permissions(manage_roles=True)
     async def addreactionrole(self, ctx, message_id: int, emoji: str, role: discord.Role):
+        """!addreactionrole <Message ID> <Emoji> <@Role>"""
         conn = sqlite3.connect('cheaters.db')
         c = conn.cursor()
         c.execute("SELECT category_name, role_ids FROM categories")

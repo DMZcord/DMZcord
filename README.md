@@ -7,9 +7,6 @@ CheaterCog:<br>
  >!ListCheaters - lists all known cheaters<br>
  >!LogCheater - adds new cheater to the list<br>
  
-ClassSetupCog:<br>
- >!ClassSetup - placeholder<br>
- 
 ModerationCog:<br>
  >!Warn - warns user<br>
  >!Mute - mutes user<br>

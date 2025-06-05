@@ -50,25 +50,36 @@ class CheaterCog(commands.Cog):
         if not search_term:
             await ctx.send("Please specify a username to check (e.g., `!checkcheater wyatt0069`).")
             return
-        conn = sqlite3.connect('dmzcord.db')  # Updated database name
+        conn = sqlite3.connect('dmzcord.db')
         c = conn.cursor()
         c.execute("SELECT activision_id, reason, timestamp, added_by FROM cheaters")
         cheaters = c.fetchall()
         conn.close()
-        found = False
+        matches = []
         for activision_id, reason, timestamp, added_by in cheaters:
             if search_term.lower() in activision_id.lower():
-                response = (
-                    f"**Cheater Found**\n"
-                    f"Activision ID: {activision_id}\n"
-                    f"Reason: {reason}\n"
-                    f"Timestamp: {format_timestamp(timestamp)}\n"
-                    f"Added By: {added_by}"
-                )
-                await ctx.send(response)
-                found = True
-        if not found:
+                matches.append((activision_id, reason, timestamp, added_by))
+        if not matches:
             await ctx.send(f"No cheater found matching '{search_term}'.")
+        elif len(matches) == 1:
+            activision_id, reason, timestamp, added_by = matches[0]
+            response = (
+                f"**Cheater Found**\n"
+                f"Activision ID: {activision_id}\n"
+                f"Reason: {reason}\n"
+                f"Timestamp: {format_timestamp(timestamp)}\n"
+                f"Added By: {added_by}"
+            )
+            await ctx.send(response)
+        else:
+            rows = [["Activision ID", "Reason", "Timestamp", "Added By"]]
+            for activision_id, reason, timestamp, added_by in matches:
+                reason = (reason[:25] + "...") if len(reason) > 25 else reason
+                added_by = (added_by[:15] + "...") if len(added_by) > 15 else added_by
+                activision_id = (activision_id[:25] + "...") if len(activision_id) > 25 else activision_id
+                rows.append([activision_id, reason, format_timestamp(timestamp), added_by])
+            table = format_table(rows)
+            await ctx.send(f"**Multiple cheaters found matching '{search_term}':**\n{table}")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(CheaterCog(bot))

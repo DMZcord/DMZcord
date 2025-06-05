@@ -128,28 +128,5 @@ class SetupCog(commands.Cog):
                     activity_obj = discord.Activity(type=discord_activity_type, name=activity)
             await self.bot.change_presence(status=discord_status, activity=activity_obj)
 
-    @commands.command(name="audit")
-    @commands.has_permissions(administrator=True)
-    async def audit(self, ctx):
-        """Lists all commands and their requirements."""
-        lines = ["**Available Commands and Requirements:**"]
-        for command in self.bot.commands:
-            if command.hidden:
-                continue
-            perms = []
-            # Check for permission decorators
-            if hasattr(command, "checks") and command.checks:
-                for check in command.checks:
-                    qualname = getattr(check, "__qualname__", "")
-                    if "has_permissions" in qualname or "has_guild_permissions" in qualname:
-                        perms.append("Requires Permissions")
-                    if "is_owner" in qualname:
-                        perms.append("Bot Owner Only")
-            # Try to get permission names from the command's checks
-            doc = command.help or command.short_doc or "No description provided."
-            perms_str = ", ".join(set(perms)) if perms else "None"
-            lines.append(f"**!{command.name}**: {doc}\nRequirements: {perms_str}")
-        await ctx.send("\n\n".join(lines))
-
 async def setup(bot):
     await bot.add_cog(SetupCog(bot))

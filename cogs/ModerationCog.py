@@ -708,5 +708,58 @@ class ModerationCog(commands.Cog):
             f"{' and activity: ' + activity if activity else ''}."
         )
 
+    @commands.command(name="echo", description="Repeats your message in the specified channel with custom emojis. Usage: !echo <channel_id> <text with emoji IDs> [animated:yes/no]")
+    @commands.has_permissions(manage_messages=True)
+    async def echo(self, ctx, channel_id: int, *, text: str):
+        """!echo <channel_id> <text with emoji IDs> [animated:yes/no]"""
+        try:
+            # Fetch the channel using the provided channel ID
+            channel = self.bot.get_channel(channel_id)
+            
+            # Check if the channel exists
+            if channel is None:
+                await ctx.send("Error: Channel not found. Please provide a valid channel ID.")
+                return
+            
+            # Check if the bot has permission to send messages in the channel
+            if not channel.permissions_for(ctx.guild.me).send_messages:
+                await ctx.send("Error: I don't have permission to send messages in that channel.")
+                return
+            
+            # Split the text to check for the animated flag at the end
+            parts = text.split()
+            is_animated = False
+            message_text = text
+
+            # Check if the last part is an animated flag
+            if parts and parts[-1].lower() in ["yes", "no"]:
+                animated_flag = parts[-1].lower()
+                is_animated = animated_flag == "yes"
+                message_text = " ".join(parts[:-1])  # Remove the animated flag from the message
+
+            # Find all emoji IDs in the message (17-19 digit numbers), but exclude those in role pings
+            # Use negative lookahead to avoid matching numbers inside <@&...>
+            emoji_ids = re.findall(r'\b\d{17,19}\b(?![^<]*>)', message_text)
+            
+            # Format each emoji ID and replace it in the message
+            formatted_message = message_text
+            for emoji_id in emoji_ids:
+                # Use a placeholder name since the user doesn't provide the emoji name
+                emoji_name = "customemoji"
+                emoji_format = f"<a:{emoji_name}:{emoji_id}>" if is_animated else f"<:{emoji_name}:{emoji_id}>"
+                # Replace the raw emoji ID with the formatted emoji
+                formatted_message = re.sub(r'\b' + emoji_id + r'\b(?![^<]*>)', emoji_format, formatted_message)
+
+            # Send the formatted message to the specified channel
+            await channel.send(formatted_message)
+            
+            # Confirm to the user that the message was sent
+            await ctx.send(f"Message sent to {channel.mention}!")
+
+        except ValueError:
+            await ctx.send("Error: Please provide a valid channel ID (it should be a number).")
+        except Exception as e:
+            await ctx.send(f"An error occurred: {str(e)}")
+
 async def setup(bot: commands.Bot):
     await bot.add_cog(ModerationCog(bot))

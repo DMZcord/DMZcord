@@ -95,11 +95,13 @@ class MyBot(commands.Bot):
                      message_id TEXT,
                      role_id TEXT,
                      emoji TEXT,
+                     category TEXT,
                      PRIMARY KEY (message_id, role_id, emoji)
                      )''')
         c.execute('''CREATE TABLE IF NOT EXISTS categories (
                      category_id TEXT PRIMARY KEY,
-                     name TEXT
+                     category_name TEXT,
+                     role_ids TEXT
                      )''')
         c.execute('''CREATE TABLE IF NOT EXISTS welcome_roles (
                      role_id TEXT PRIMARY KEY
@@ -108,6 +110,15 @@ class MyBot(commands.Bot):
                      key TEXT PRIMARY KEY,
                      value TEXT
                      )''')
+        c.execute('''CREATE TABLE IF NOT EXISTS community_loadouts (
+            username TEXT PRIMARY KEY,
+            data TEXT,
+            last_updated TEXT
+        )''')
+        c.execute('''CREATE TABLE IF NOT EXISTS user_sync (
+            discord_id TEXT PRIMARY KEY,
+            wzhub_username TEXT
+        )''')
         # Initialize default settings if not present
         default_settings = [
             ('welcome_channel_id', ''),
@@ -232,8 +243,6 @@ class MyBot(commands.Bot):
         if member.guild_permissions.administrator:
             await ctx.send("You cannot ban a user with administrator permissions.")
             return
-        # ...existing code...
-# ...existing code...
 
 # Initialize bot as MyBot
 bot = MyBot(command_prefix='!', intents=intents)

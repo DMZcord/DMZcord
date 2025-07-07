@@ -189,4 +189,6 @@ def main():
     asyncio.run(setup_logging_and_run())
 
 if __name__ == "__main__":
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     main()

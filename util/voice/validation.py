@@ -1,15 +1,12 @@
+
 import re
-import discord
 
 class MusicValidation:
-    YOUTUBE_URL_RE = re.compile(
-        r"^(https?\:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\/.+$"
-    )
+    YOUTUBE_URL_RE = re.compile(r"^(https?\:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\/.+$")
 
-    @classmethod
-    def is_youtube_url(cls, url: str) -> bool:
-        """Check if URL is a valid YouTube URL."""
-        return bool(cls.YOUTUBE_URL_RE.match(url))
+    @staticmethod
+    def is_youtube_url(url: str) -> bool:
+        return bool(MusicValidation.YOUTUBE_URL_RE.match(url))
 
     @staticmethod
     def check_duration_permissions(ctx, duration):

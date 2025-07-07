@@ -1,6 +1,6 @@
 # DMZcord
 
-A powerful Discord bot for Call of Duty: DMZ communities, featuring loadout management, weapon statistics, and community tools.
+Custom Discord bot for Call of Duty: DMZ communities
 
 🔗 **[Join DMZcord](https://discord.gg/CHUynnZdae)** 
 

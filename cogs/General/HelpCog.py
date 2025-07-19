@@ -122,7 +122,9 @@ class HelpCog(commands.Cog):
     @commands.command(name="info")
     @commands.is_owner()
     async def botinfo(self, ctx):
-        """Show info about this bot process."""
+        """Show info about this bot process and server stats."""
+
+        # Bot info
         info = DebugHelpers.get_bot_info()
         current_time = time.time()
         uptime_seconds = current_time - info['start_timestamp']

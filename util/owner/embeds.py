@@ -4,6 +4,7 @@ import sys
 import psutil
 import os
 import time
+import aiohttp
 from util.core.database import Database
 
 class DebugEmbeds:
@@ -30,7 +31,6 @@ class DebugEmbeds:
     async def build_botinfo_embed(bot, info, uptime_str):
         process = psutil.Process(os.getpid())
         mem_mb = process.memory_info().rss / 1024 / 1024
-        total_mem_gb = psutil.virtual_memory().total / 1024 / 1024 / 1024
         cpu_percent = process.cpu_percent(interval=0.1)
         python_version = sys.version.split()[0]
         dpy_version = discord.__version__
@@ -48,16 +48,29 @@ class DebugEmbeds:
         total_text_channels = sum(len(guild.text_channels) for guild in bot.guilds)
         total_voice_channels = sum(len(guild.voice_channels) for guild in bot.guilds)
 
-        # Get MySQL DB size live
-        try:
-            db_size = await Database.get_mysql_db_size()
-            db_size_str = f"{db_size:.2f} MB"
-            # Assume max DB size is 20 GB for percent calculation
-            db_max_gb = 20
-            db_max_mb = db_max_gb * 1024
-            db_percent = (db_size / db_max_mb) * 100
-        except Exception:
-            db_percent = "Unknown"
+        # PebbleHost API stats
+        pebble_stats = None
+        api_key = os.getenv("PEBBLEHOST_API_KEY")
+        server_id = os.getenv("PEBBLEHOST_SERVER_ID")
+        if api_key and server_id:
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Accept": "application/json"
+            }
+            url = f"https://panel.pebblehost.com/api/client/servers/{server_id}/resources"
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, headers=headers, timeout=10) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            stats = data["attributes"]["resources"]
+                            pebble_stats = stats
+                        else:
+                            pebble_stats = None
+            except Exception as e:
+                pebble_stats = None
+        else:
+            pebble_stats = None
 
         # Latency: WebSocket, API, and DB
         ws_latency = bot.latency * 1000  # ms
@@ -92,14 +105,25 @@ class DebugEmbeds:
             else f"WS: {ws_latency:.2f}ms\nAPI: {'N/A' if api_latency < 0 else f'{api_latency:.2f}ms'}\nDB: {'N/A' if db_latency < 0 else f'{db_latency:.2f}ms'}"
         )
 
-        # Usage field (CPU, Memory, DB)
-        mem_percent = (mem_mb * 1024 * 1024 / psutil.virtual_memory().total) * 100
+        # Calculate memory percent (always out of 1 GB)
+        if pebble_stats and isinstance(pebble_stats, dict):
+            mem_percent = (pebble_stats['memory_bytes'] / (1024**3)) * 100
+        else:
+            mem_percent = (mem_mb / 1024) * 100  # mem_mb / 1024 MB = fraction of 1GB
 
-        usage_str = (
-            f"🖥️ CPU: {cpu_percent:.2f}%\n"
-            f"💾 Mem: {mem_mb:.2f} MB ({mem_percent:.2f}%)\n"
-            f"🗄️ DB: {db_size_str} ({db_percent:.2f}%)"
-        )
+        # Usage field (CPU, Memory, DB) - always 3 lines
+        if pebble_stats and isinstance(pebble_stats, dict):
+            usage_str = (
+                f"CPU: {pebble_stats['cpu_absolute']:.2f}%\n"
+                f"Mem: {pebble_stats['memory_bytes'] / (1024**2):.2f} MB ({mem_percent:.2f}%)\n"
+                f"DB: {pebble_stats['disk_bytes'] / (1024**3):.2f} GB"
+            )
+        else:
+            usage_str = (
+                f"CPU: {cpu_percent:.2f}%\n"
+                f"Mem: {mem_mb:.2f} MB ({mem_percent:.2f}%)\n"
+                f"DB: {getattr(bot, 'db_size', 'N/A')} MB (0.00%)"
+            )
 
         # Combined channels
         channels_str = f"📃 {total_text_channels}  🔊 {total_voice_channels}"
@@ -111,7 +135,7 @@ class DebugEmbeds:
         # Top row
         embed.add_field(
             name="📈 Stats",
-            value=f"**Servers:** {len(bot.guilds)}\n**Users:** {len(bot.users)}\n**Commands:** {len(bot.commands)}",
+            value=f"Servers: {len(bot.guilds)}\nUsers: {len(bot.users)}\nCommands: {len(bot.commands)}",
             inline=True
         )
         embed.add_field(
@@ -142,7 +166,7 @@ class DebugEmbeds:
         )
         # Footer: PID, Python, discord.py, Version
         embed.set_footer(
-            text=f"📊 PID: {info['pid']}   🐍 Python: {python_version}   📦 discord.py: {dpy_version}   📝 Github: {commit_hash}"
+            text=f"📊 PID: {info['pid']}   🐍 Python: {python_version}   📦 Discord.py: {dpy_version}   📝 Github: {commit_hash}"
         )
         # Thumbnail: Bot profile picture
         if bot.user and bot.user.avatar:
@@ -168,7 +192,7 @@ class DebugEmbeds:
                 f"{cmd:<12}{stat['count']:>4}{stat['avg_time']:>6.2f}{median:>6.2f}{stat['min_time']:>6.2f}{stat['max_time']:>6.2f}"
             )
         embed.add_field(
-            name="Stats",
+            name="📊 Stats",
             value="```\n" + "\n".join(lines) + "\n```",
             inline=False
         )
@@ -192,10 +216,10 @@ class DebugEmbeds:
             except Exception:
                 user_display = f"<@{stat['user_id']}>"
             user_lines.append(
-                f"{user_display}: {stat['total_runs']} runs, avg {stat['avg_time']:.2f}s, max {stat['max_time']:.2f}s"
+                f"👤 {user_display}: {stat['total_runs']} runs, avg {stat['avg_time']:.2f}s, max {stat['max_time']:.2f}s"
             )
         embed.add_field(
-            name="Top 10 Most Active Users",
+            name="🏅 Top 10 Most Active Users",
             value="\n".join(user_lines) if user_lines else "No data.",
             inline=False
         )
@@ -211,12 +235,12 @@ class DebugEmbeds:
                     user_display = user_obj.mention if user_obj else f"<@{user['user_id']}>"
                 except Exception:
                     user_display = f"<@{user['user_id']}>"
-                bl_lines.append(f"{user_display}: {user['count']} blacklist entries")
+                bl_lines.append(f"⛔ {user_display}: {user['count']} blacklist entries")
         else:
             bl_lines.append("No blacklist data found.")
 
         embed.add_field(
-            name="Top 5 Most Blacklisted Users",
+            name="🚫 Top 5 Most Blacklisted Users",
             value="\n".join(bl_lines),
             inline=False
         )
